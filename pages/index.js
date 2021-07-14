@@ -6,7 +6,7 @@ import {
   OrkutNostalgicIconSet,
 } from "../src/lib/AlurakutCommons";
 import { ProfileRelationsBoxWrapper } from "../src/components/ProfileRelations";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function ProfileSideBar(props) {
   return (
@@ -27,7 +27,30 @@ function ProfileSideBar(props) {
   );
 }
 
+function ProfileRelationsBox(props) {
+  return (
+    <ProfileRelationsBoxWrapper>
+      <h2 className="smallTitle">
+        Pessoas da comunidade ({props.items.length})
+      </h2>
+      <ul>
+        {/* {props.items.map((itemAtual) => {
+          return (
+            <li key={itemAtual.login}>
+              <a href={`/users/${itemAtual}`}>
+                <img src={itemAtual.avatar_url} />
+                <span>{itemAtual.name}</span>
+              </a>
+            </li>
+          );
+        })} */}
+      </ul>
+    </ProfileRelationsBoxWrapper>
+  );
+}
+
 export default function Home() {
+  // variaveis
   const [comunidades, setComunidades] = useState([
     {
       id: "2316546987489461564648646123",
@@ -36,6 +59,7 @@ export default function Home() {
         "https://observatoriodocinema.uol.com.br/wp-content/uploads/2020/12/Garfield-capa.jpeg",
     },
   ]);
+  const [seguidores, setSeguidores] = useState([]);
   const profileName = "MatheusPatriota";
   const pessoasFavoritas = [
     "LucasAzvd",
@@ -46,11 +70,23 @@ export default function Home() {
     "rafxrad",
   ];
 
+  useEffect(() => {
+    fetch("https://api.github.com/users/MatheusPatriota/followers")
+      .then((serverResponse) => {
+        return serverResponse.json();
+      })
+      .then((reponseConverted) => {
+        setSeguidores(reponseConverted);
+      });
+  }, [seguidores]);
+
+  // funcoes
+
   function handleCreateCommunity(event) {
     event.preventDefault();
 
     const formData = new FormData(event.target);
-    
+
     const comunidade = {
       id: new Date().toISOString(),
       title: formData.get("title"),
@@ -59,7 +95,7 @@ export default function Home() {
 
     setComunidades([...comunidades, comunidade]);
   }
-  
+
   return (
     <>
       <AlurakutMenu githubUser={profileName} />
@@ -99,6 +135,7 @@ export default function Home() {
           style={{ gridArea: "profileRelationsArea" }}
           className="profileRelationsArea"
         >
+          <ProfileRelationsBox title="Seguidores" items={seguidores} />
           <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">
               Pessoas da comunidade ({pessoasFavoritas.length})

@@ -7,6 +7,7 @@ import {
 } from "../src/lib/AlurakutCommons";
 import { ProfileRelationsBoxWrapper } from "../src/components/ProfileRelations";
 import { useEffect, useState } from "react";
+import { ProfileRelationsBox } from "../src/components/ProfileRelationsBox";
 
 function ProfileSideBar(props) {
   return (
@@ -27,38 +28,9 @@ function ProfileSideBar(props) {
   );
 }
 
-function ProfileRelationsBox(props) {
-  return (
-    <ProfileRelationsBoxWrapper>
-      <h2 className="smallTitle">
-        Pessoas da comunidade ({props.items.length})
-      </h2>
-      <ul>
-        {/* {props.items.map((itemAtual) => {
-          return (
-            <li key={itemAtual.login}>
-              <a href={`/users/${itemAtual}`}>
-                <img src={itemAtual.avatar_url} />
-                <span>{itemAtual.name}</span>
-              </a>
-            </li>
-          );
-        })} */}
-      </ul>
-    </ProfileRelationsBoxWrapper>
-  );
-}
-
 export default function Home() {
   // variaveis
-  const [comunidades, setComunidades] = useState([
-    {
-      id: "2316546987489461564648646123",
-      title: "Odeio Sair de Casa",
-      image:
-        "https://observatoriodocinema.uol.com.br/wp-content/uploads/2020/12/Garfield-capa.jpeg",
-    },
-  ]);
+  const [comunidades, setComunidades] = useState([]);
   const [seguidores, setSeguidores] = useState([]);
   const profileName = "MatheusPatriota";
   const pessoasFavoritas = [
@@ -78,9 +50,34 @@ export default function Home() {
       .then((reponseConverted) => {
         setSeguidores(reponseConverted);
       });
-  }, [seguidores]);
 
-  // funcoes
+    // API GraphQL
+    fetch("https://graphql.datocms.com/", {
+      method: "POST",
+      headers: {
+        Authorization: "d9e42ca99c80a323feeafc70eb7ba6",
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        query: `query {
+        allCommunities {
+          id 
+          title
+          imageUrl
+          slugCriador
+        }
+      }`,
+      }),
+    })
+      .then((response) => response.json()) // Pega o retorno do response.json() e já retorna
+      .then((respostaCompleta) => {
+        const comunidadesVindasDoDato = respostaCompleta.data.allCommunities;
+        // console.log(comunidadesVindasDoDato)
+        setComunidades(comunidadesVindasDoDato);
+      });
+  }, []);
+  // API Github
 
   function handleCreateCommunity(event) {
     event.preventDefault();
@@ -88,12 +85,30 @@ export default function Home() {
     const formData = new FormData(event.target);
 
     const comunidade = {
-      id: new Date().toISOString(),
       title: formData.get("title"),
-      image: formData.get("image"),
+      imageUrl: formData.get("image"),
+      slugCriador: profileName,
     };
 
-    setComunidades([...comunidades, comunidade]);
+    console.log(comunidade);
+
+    fetch("/api/comunidades", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(comunidade),
+    }).then(async (response) => {
+      console.log("entrou na async")
+
+      const dados = await response.json();
+
+      console.log("saiu do async")
+
+      console.log(dados.registroCriado);
+      const comunidade = dados.registroCriado;
+      setComunidades([...comunidades, comunidade]);
+    });
   }
 
   return (
@@ -136,6 +151,8 @@ export default function Home() {
           className="profileRelationsArea"
         >
           <ProfileRelationsBox title="Seguidores" items={seguidores} />
+          {/* <ProfileRelationsBox title="Pessoas da Comunidade" items={pessoasFavoritas} />
+          <ProfileRelationsBox title="Comunidade" items={seguidores} /> */}
           <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">
               Pessoas da comunidade ({pessoasFavoritas.length})
@@ -157,12 +174,12 @@ export default function Home() {
           <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">Comunidades ({comunidades.length})</h2>
             <ul>
-              {comunidades.map((commnity) => {
+              {comunidades.slice(0, 6).map((comunidade) => {
                 return (
-                  <li key={commnity.id}>
-                    <a href={`/users/${commnity.title}`}>
-                      <img src={commnity.image} />
-                      <span>{commnity.title}</span>
+                  <li key={comunidade.id}>
+                    <a href={`/comunidades/${comunidade.id}`}>
+                      <img src={comunidade.imageUrl} />
+                      <span>{comunidade.title}</span>
                     </a>
                   </li>
                 );

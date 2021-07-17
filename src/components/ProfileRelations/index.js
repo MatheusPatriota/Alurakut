@@ -2,6 +2,14 @@ import styled from 'styled-components';
 import Box from '../Box';
 
 export const ProfileRelationsBoxWrapper = styled(Box)`
+  a{
+    text-decoration: none;
+    color: white;
+  }
+  a:hover{
+    color: #FFFFFF;
+  }
+  
   ul {
     display: grid;
     grid-gap: 8px;

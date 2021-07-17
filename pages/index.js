@@ -1,5 +1,7 @@
 import MainGrid from "../src/components/MainGrid";
 import Box from "../src/components/Box";
+import nookies from 'nookies';
+import jwt from 'jsonwebtoken';
 import {
   AlurakutMenu,
   AlurakutProfileSidebarMenuDefault,
@@ -28,11 +30,11 @@ function ProfileSideBar(props) {
   );
 }
 
-export default function Home() {
+export default function Home(props) {
   // variaveis
   const [comunidades, setComunidades] = useState([]);
   const [seguidores, setSeguidores] = useState([]);
-  const profileName = "MatheusPatriota";
+  const profileName = props.githubUser;
   const pessoasFavoritas = [
     "LucasAzvd",
     "jussaraalves",
@@ -43,7 +45,7 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    fetch("https://api.github.com/users/MatheusPatriota/followers")
+    fetch(`https://api.github.com/users/${profileName}/followers`)
       .then((serverResponse) => {
         return serverResponse.json();
       })
@@ -185,9 +187,40 @@ export default function Home() {
                 );
               })}
             </ul>
+            <hr/>
+            <a href="#">
+              Ver Todas
+            </a>
           </ProfileRelationsBoxWrapper>
         </div>
       </MainGrid>
     </>
   );
 }
+
+export async function getServerSideProps(context) {
+  const cookies = nookies.get(context)
+  const token = cookies.USER_TOKEN;
+  const { isAuthenticated } = await fetch('https://alurakut.vercel.app/api/auth', {
+    headers: {
+        Authorization: token
+      }
+  })
+  .then((resposta) => resposta.json())
+
+  if(!isAuthenticated) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      }
+    }
+  }
+
+  const { githubUser } = jwt.decode(token);
+  return {
+    props: {
+      githubUser
+    }, // will be passed to the page component as props
+  }
+} 
